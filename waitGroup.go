@@ -32,7 +32,7 @@ func TestChan() {
 	}()
 
 	for i := 0; i < num; i++ {
-		c <- "123"
+		c <- "hello"
 	}
 
 	close(c)
