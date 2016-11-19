@@ -6,18 +6,6 @@ import (
 )
 
 func main() {
-	if isNumber(" -. ") {
-		fmt.Println("ok")
-	}
-	if isNumber(" +.8 ") {
-		fmt.Println("ok")
-	}
-	if isNumber(" 13e.1 ") {
-		fmt.Println("ok")
-	}
-	if isNumber(" 1.e+1 ") {
-		fmt.Println("ok")
-	}
 	if isNumber(" 1.e-1 ") {
 		fmt.Println("ok")
 	}
@@ -25,7 +13,6 @@ func main() {
 
 func isNumber(s string) bool {
 	s = strings.Trim(s, " ")
-	println(s)
 
 	length := len(s)
 	if length == 0 {
@@ -54,7 +41,7 @@ func isNumber(s string) bool {
 	for i := 1; i < length; i++ {
 		if i == 1 && (flagO == 1 || flagP == 1) {
 			if s[i] < 48 || s[i] > 57 {
-				if i + 1 >= length {
+				if i+1 >= length {
 					return false
 				}
 				if s[i] == 46 && flagP == 0 {
@@ -73,9 +60,9 @@ func isNumber(s string) bool {
 			} else if s[i] == 101 {
 				if flagE == 1 || (i+1 >= length) {
 					return false
-				} else if (s[i+1] == 43 || s[i+1] == 45) {
+				} else if s[i+1] == 43 || s[i+1] == 45 {
 					i++
-					if (i+1 >= length) {
+					if i+1 >= length {
 						return false
 					}
 				} else {
