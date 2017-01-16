@@ -56,7 +56,8 @@ func main() {
 
 	n := negroni.Classic()
 	n.Use(negroni.HandlerFunc(MyMiddleWare1))
+	//n.UseFunc(MyMiddleWare2)
 	n.UseHandler(mux)
+	n.UseFunc(MyMiddleWare2)
 	n.Run(":3000")
-
 }
