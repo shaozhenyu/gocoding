@@ -11,7 +11,7 @@ import (
 type User struct {
 	Name string
 	Ip   string
-	Data chan string
+	Conn net.Conn
 }
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 			newOne := &User{
 				Name: ip,
 				Ip:   ip,
-				Data: make(chan string, 1024),
+				Conn: conn,
 			}
 			user[ip] = newOne
 		}
@@ -46,12 +46,6 @@ func main() {
 func handleConnection(conn net.Conn, user *User, all map[string]*User) {
 	var ch chan int = make(chan int)
 	r := bufio.NewReader(os.Stdin)
-
-	//client to client
-	go func() {
-		msg := <-user.Data
-		conn.Write([]byte(msg))
-	}()
 
 	go func() {
 		for {
@@ -76,9 +70,9 @@ func handleConnection(conn net.Conn, user *User, all map[string]*User) {
 		//send to someone
 		for k, v := range all {
 			if k != user.Ip {
-				v.Data <- string(buf)
+				v.Conn.Write(buf)
 			}
 		}
-		fmt.Println(string(buf))
+		//fmt.Println(string(buf))
 	}
 }
