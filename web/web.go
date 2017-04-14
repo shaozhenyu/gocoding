@@ -1,34 +1,41 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"runtime/pprof"
 )
 
-var cpuprofile = flag.String("cpuprofile", "web.prof", "write cpu profile to file")
-
-func main() {
-	flag.Parse()
-	fmt.Println(*cpuprofile)
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
-
-	http.HandleFunc("/hello", hello)
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+type Router struct {
+	Name string
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "hello world")
+func (r *Router) ServeHTTP(http.ResponseWriter, *http.Request) {
+	fmt.Println("new route")
+}
+
+func New() *Router {
+	return &Router{
+		Name: "aa",
+	}
+}
+
+func main() {
+	fmt.Println("test")
+
+	router := New()
+
+
+	http.HandleFunc("/hello", Hello0)
+	http.HandleFunc("/hello1", Hello1)
+
+	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func Hello1(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "hello1111111")
+}
+
+func Hello0(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "hello00000000")
 }
