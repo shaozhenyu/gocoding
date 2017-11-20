@@ -18,14 +18,13 @@ func main() {
 
 func hello(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(32 << 20)
-
 	file, handler, err := r.FormFile("uploadfile")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer file.Close()
-	f, err := os.OpenFile(handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.Create(handler.Filename)
 	if err != nil {
 		fmt.Println(err)
 		return
