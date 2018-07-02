@@ -39,42 +39,53 @@ type AvCharge struct {
 	MTime          time.Time
 }
 
-func pointSlice(count int) {
-	arr1 := make([]*AvCharge, count)
-	for i := 0; i < count; i++ {
-		adc := &AvCharge{
-			ID: 1111111, AvID: 222222, MID: 333333, TagID: 4, SubTagID: 5, IsOriginal: 1, DanmakuCount: 10, CommentCount: 11,
-			CollectCount: 22, CoinCount: 11, ShareCount: 11, ElecPlayCount: 11, TotalPlayCount: 11, WebPlayCount: 11, AppPlayCount: 333,
-			H5PlayCount: 111, LvUnknown: 100, Lv_1: 11, Lv_2: 22, Lv_3: 33, Lv_4: 44, Lv_5: 55, Lv_6: 66,
-			VScore: 33, IncCharge: 100, TotalCharge: 100, IsDeleted: 0, Date: time.Now(), UploadTime: time.Now(),
-			CTime: time.Now(), MTime: time.Now(),
-		}
-		arr1[i] = adc
+func pointS(count int) {
+	a := []*AvCharge{}
+	for i := 0; i < 150; i++ {
+		a1 := pointSlice(count)
+		a = append(a, a1...)
 	}
 }
 
-func pointSlice1(count int) {
+func pointS1(count int) {
+	a := []*AvCharge{}
+	for i := 0; i < 150; i++ {
+		a1 := pointSlice1(count)
+		a = append(a, a1...)
+	}
+}
+
+func pointSlice(count int) []*AvCharge {
+	arr1 := make([]*AvCharge, count)
+	var adc *AvCharge
+	for i := 0; i < count; i++ {
+		adc = &AvCharge{
+			ID: 1111111, AvID: 222222, MID: 333333, TagID: 4, SubTagID: 5, IsOriginal: 1, DanmakuCount: 10, CommentCount: 11,
+		}
+		arr1[i] = adc
+	}
+	return arr1
+}
+
+func pointSlice1(count int) []*AvCharge {
 	arr := []*AvCharge{}
 	for i := 0; i < count; i++ {
 		adc := &AvCharge{
 			ID: 1111111, AvID: 222222, MID: 333333, TagID: 4, SubTagID: 5, IsOriginal: 1, DanmakuCount: 10, CommentCount: 11,
-			CollectCount: 22, CoinCount: 11, ShareCount: 11, ElecPlayCount: 11, TotalPlayCount: 11, WebPlayCount: 11, AppPlayCount: 333,
-			H5PlayCount: 111, LvUnknown: 100, Lv_1: 11, Lv_2: 22, Lv_3: 33, Lv_4: 44, Lv_5: 55, Lv_6: 66,
-			VScore: 33, IncCharge: 100, TotalCharge: 100, IsDeleted: 0, Date: time.Now(), UploadTime: time.Now(),
-			CTime: time.Now(), MTime: time.Now(),
 		}
 		arr = append(arr, adc)
 	}
+	return arr
 }
 
 func BenchmarkPointSlice(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		slice(10000000)
+		pointS(2000)
 	}
 }
 
 func BenchmarkPointSlice1(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		slice1(10000000)
+		pointS1(2000)
 	}
 }

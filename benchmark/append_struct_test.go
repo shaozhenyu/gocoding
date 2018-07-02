@@ -35,12 +35,12 @@ func structSlice1(count int) {
 
 func BenchmarkStructSlice(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		slice(10000000)
+		slice(2000)
 	}
 }
 
 func BenchmarkStructSlice1(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		slice1(10000000)
+		slice1(2000)
 	}
 }
