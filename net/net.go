@@ -10,7 +10,7 @@ import (
 func main() {
 	for i := 0; i < 1000; i++ {
 		go func() {
-			resp, err := http.PostForm("http://uat-up-profit.bilibili.co/allowance/api/x/internal/growup/up/withdraw/success", url.Values{"order_no": {"1098"}, "trade_status": {"2"}})
+			resp, err := http.PostForm()
 			if err != nil {
 				fmt.Println(err)
 				return
