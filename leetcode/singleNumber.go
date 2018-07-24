@@ -3,11 +3,19 @@ package main
 import "fmt"
 
 func main() {
-	nums := []int{1, 2, 2, 1, 3, 4}
+	nums := []int{11, 11, 11, 12}
 	fmt.Println(singleNumber(nums))
 }
 
-func singleNumber(nums []int) []int {
+func singleNumber(nums []int) int {
+	sum := 1
+	for i := 0; i < len(nums); i++ {
+		sum = sum ^ nums[i]
+	}
+	return sum
+}
+
+func singleNumber1(nums []int) []int {
 	length := len(nums)
 	p := map[int]int{}
 
