@@ -13,6 +13,7 @@ func main() {
 }
 
 func evaluate(expression string) int {
+	fmt.Println("origin: ", expression)
 	m := make(map[string]int)
 	return eval(expression, m)
 }
@@ -38,7 +39,6 @@ func eval(expression string, m map[string]int) int {
 		}
 		return cal(s[len(s)-1], newM)
 	}
-
 	return 0
 }
 
@@ -71,9 +71,7 @@ func parse(str string) []string {
 			pair--
 		}
 	}
-
 	s = append(s, str[start:])
-
 	for i := 0; i < len(s); i++ {
 		fmt.Println(s[i])
 	}
