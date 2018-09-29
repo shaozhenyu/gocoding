@@ -12,6 +12,24 @@ func main() {
 }
 
 func reverseStr(s string, k int) string {
+	if len(s) > 2 * k {
+		return reverseStr(s[:2*k], k) + reverseStr(s[2*k:], k)
+	}
+	if len(s) > k {
+		return reverse(s[:k]) + s[k:]
+	}
+	return reverse(s)
+}
+
+func reverse(s string) string {
+	b := []byte(s)
+	for i := 0; i < len(b)/2; i++ {
+		b[i], b[len(b)-1-i] = b[len(b)-1-i], b[i]
+	}
+	return string(b)
+}
+
+func reverseStr1(s string, k int) string {
 	b := []byte(s)
 	lenS := len(s)
 	if lenS <= k {
