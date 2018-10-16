@@ -20,6 +20,7 @@ func leastInterval(tasks []byte, n int) int {
 	same := 0
 	i := 24
 	for i >= 0 && arr[i] == arr[25] {
+		same++
 		i--
 	}
 	return max(len(tasks), (arr[25]-1)*n+arr[25]+same)

@@ -15,32 +15,28 @@ func main() {
 	nums = []int{3, 1, 3}
 	fmt.Println(1, findMin(nums))
 
-	nums = []int{1,1,1,1,2,2,2,2,2}
+	nums = []int{1, 1, 1, 1, 2, 2, 2, 2, 2}
 	fmt.Println(1, findMin(nums))
 
-	nums = []int{2,1,1,1}
+	nums = []int{2, 1, 1, 1}
 	fmt.Println(1, findMin(nums))
 
 	fmt.Println("aaaaaa")
-	nums = []int{3,3,1,3}
+	nums = []int{3, 3, 1, 3, 3}
 	fmt.Println(1, findMin(nums))
 }
 
 func findMin(nums []int) int {
 	low := 0
 	high := len(nums) - 1
-	for nums[low] >= nums[high] {
+	for nums[low] >= nums[high] && low < high {
 		mid := (low + high) / 2
-		if nums[low] == nums[mid] && nums[high] == nums[mid] {
-			break
-		}
-		fmt.Println(nums[low], nums[high], nums[mid])
-		if nums[mid] >= nums[low] {
+		if nums[mid] > nums[low] {
 			low = mid + 1
-		} else if nums[mid] <= nums[high] {
+		} else if nums[mid] < nums[low] {
 			high = mid
-		} else if nums[mid] > nums[high] {
-			low = high
+		} else if nums[mid] == nums[low] {
+			low++
 		}
 	}
 	return nums[low]
