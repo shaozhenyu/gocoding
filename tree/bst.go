@@ -9,123 +9,146 @@ type BST struct {
 }
 
 type Node struct {
-	Key   int
-	Val   interface{}
-	Left  *Node
-	Right *Node
-	Size  int
-}
-
-func main() {
-	t := new(BST)
-	t.Put(1, "1aa")
-	t.Put(2, "2aa")
-	t.Put(-1, "-1aa")
-	t.Put(10, "10aa")
-	t = deleteMin(t)
-	t.preOrder()
-	fmt.Println("-----")
-	t = deleteMin(t)
-	t.preOrder()
-	fmt.Println("-----")
-	t = deleteMin(t)
-	t.preOrder()
-	fmt.Println("-----")
-	t = deleteMin(t)
-	t.preOrder()
+	key   int
+	val   interface{}
+	left  *Node
+	right *Node
 }
 
 func newNode(key int, val interface{}) *Node {
 	return &Node{
-		Key:  key,
-		Val:  val,
-		Size: 1,
+		key: key,
+		val: val,
 	}
 }
 
 func (b *BST) Put(key int, val interface{}) {
-	if n.Size == 0 {
-		n.Key = key
-		n.Val = val
-		n.Size = 1
+	if b.root == nil {
+		b.root = newNode(key, val)
+		b.size++
 		return
 	}
-	if n.Key == key {
-		n.Val = val
+	if b.root.put(key, val) {
+		b.size++
 	}
-	if n.Key > key {
-		if n.Left != nil {
-			n.Left.Put(key, val)
-		} else {
-			n.Left = initNode(key, val)
-		}
-	}
-	if n.Key < key {
-		if n.Right != nil {
-			n.Right.Put(key, val)
-		} else {
-			n.Right = initNode(key, val)
-		}
-	}
-	n.Size = size(n.Left) + size(n.Right) + 1
 }
 
-func (n *Node) Get(key int) interface{} {
-	if n.Size == 0 {
+func (b *BST) Get(key int) interface{} {
+	if b.root == nil {
 		return nil
 	}
-	if n.Key == key {
-		return n.Val
+	return b.root.get(key)
+}
+
+func (b *BST) Delete(key int) bool {
+	if b.root == nil {
+		return false
 	}
-	if n.Key > key && n.Left != nil {
-		return n.Left.Get(key)
+	var ok bool
+	b.root, ok = delNode(b.root, key)
+	if ok {
+		b.size--
 	}
-	if n.Key < key && n.Right != nil {
-		return n.Right.Get(key)
+	return ok
+}
+
+func (b *BST) Size() int {
+	return b.size
+}
+
+func delNode(n *Node, key int) (*Node, bool) {
+	ok := false
+	if n.key > key {
+		if n.left != nil {
+			n.left, ok = delNode(n.left, key)
+		}
+		return n, ok
+	}
+	if n.key < key {
+		if n.right != nil {
+			n.right, ok = delNode(n.right, key)
+		}
+		return n, ok
+	}
+	ok = true
+	if n.right == nil {
+		return n.left, ok
+	}
+	t := n
+	n = getMinNode(t.right)
+	n.right = deleteMin(t.right)
+	n.left = t.left
+	return n, ok
+}
+
+func deleteMin(n *Node) *Node {
+	if n.left == nil {
+		t := n.right
+		n = nil
+		return t
+	} else {
+		n.left = deleteMin(n.left)
+	}
+	return n
+}
+func getMinNode(n *Node) *Node {
+	if n == nil {
+		return nil
+	}
+	if n.left == nil {
+		return n
+	}
+	return getMinNode(n.left)
+}
+
+func (n *Node) put(key int, val interface{}) bool {
+	if key == n.key {
+		n.val = val
+		return false
+	}
+	if key < n.key {
+		if n.left == nil {
+			n.left = newNode(key, val)
+		} else {
+			return n.left.put(key, val)
+		}
+	} else {
+		if n.right == nil {
+			n.right = newNode(key, val)
+		} else {
+			return n.right.put(key, val)
+		}
+	}
+	return true
+}
+
+func (n *Node) get(key int) interface{} {
+	if n.key == key {
+		return n.val
+	}
+	if n.key > key && n.left != nil {
+		return n.left.get(key)
+	}
+	if n.key < key && n.right != nil {
+		return n.right.get(key)
 	}
 	return nil
 }
 
-func size(n *Node) int {
-	if n == nil {
-		return 0
+func (b *BST) PreOrder() {
+	if b.root == nil {
+		return
 	}
-	return n.Size
+	b.root.preOrder()
+	fmt.Println("-----------------")
 }
 
 func (n *Node) preOrder() {
-	if n.Left != nil {
-		n.Left.preOrder()
+	fmt.Println(n.key, n.val)
+	if n.left != nil {
+		n.left.preOrder()
 	}
-	if n != nil {
-		fmt.Println(n.Key, n.Val, n.Size)
+	if n.right != nil {
+		n.right.preOrder()
 	}
-	if n.Right != nil {
-		n.Right.preOrder()
-	}
-}
-
-func (n *Node) init() {
-	n.Size = 0
-	n.Key = 0
-	n.Val = nil
-	n.Left = nil
-	n.Right = nil
-}
-
-func deleteMin(n *Node) *Node {
-	if n.Size == 0 {
-		return n
-	}
-	if n.Left == nil {
-		if n.Right == nil {
-			n.init()
-			return n
-		}
-		return n.Right
-	} else {
-		n.Left = deleteMin(n.Left)
-		n.Size--
-	}
-	return n
 }
