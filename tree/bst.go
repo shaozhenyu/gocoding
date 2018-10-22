@@ -15,6 +15,18 @@ type Node struct {
 	right *Node
 }
 
+func main() {
+	b := new(BST)
+	b.Put(100, 100)
+	b.Put(10, 100)
+	b.Put(105, 100)
+	b.Put(20, 100)
+	b.Put(3, 100)
+	fmt.Println(b.Size())
+	b.root.midOrder()
+}
+
+
 func newNode(key int, val interface{}) *Node {
 	return &Node{
 		key: key,
@@ -33,11 +45,45 @@ func (b *BST) Put(key int, val interface{}) {
 	}
 }
 
+func (n *Node) put(key int, val interface{}) bool {
+	if key == n.key {
+		n.val = val
+		return false
+	}
+	if key < n.key {
+		if n.left == nil {
+			n.left = newNode(key, val)
+		} else {
+			n.left.put(key, val)
+		}
+	} else {
+		if n.right == nil {
+			n.right = newNode(key, val)
+		} else {
+			n.right.put(key, val)
+		}
+	}
+	return true
+}
+
 func (b *BST) Get(key int) interface{} {
 	if b.root == nil {
 		return nil
 	}
 	return b.root.get(key)
+}
+
+func (n *Node) get(key int) interface{} {
+	if n.key == key {
+		return n.val
+	}
+	if n.key > key && n.left != nil {
+		return n.left.get(key)
+	}
+	if n.key < key && n.right != nil {
+		return n.right.get(key)
+	}
+	return nil
 }
 
 func (b *BST) Delete(key int) bool {
@@ -50,10 +96,6 @@ func (b *BST) Delete(key int) bool {
 		b.size--
 	}
 	return ok
-}
-
-func (b *BST) Size() int {
-	return b.size
 }
 
 func delNode(n *Node, key int) (*Node, bool) {
@@ -101,54 +143,16 @@ func getMinNode(n *Node) *Node {
 	return getMinNode(n.left)
 }
 
-func (n *Node) put(key int, val interface{}) bool {
-	if key == n.key {
-		n.val = val
-		return false
-	}
-	if key < n.key {
-		if n.left == nil {
-			n.left = newNode(key, val)
-		} else {
-			return n.left.put(key, val)
-		}
-	} else {
-		if n.right == nil {
-			n.right = newNode(key, val)
-		} else {
-			return n.right.put(key, val)
-		}
-	}
-	return true
+func (b *BST) Size() int {
+	return b.size
 }
 
-func (n *Node) get(key int) interface{} {
-	if n.key == key {
-		return n.val
-	}
-	if n.key > key && n.left != nil {
-		return n.left.get(key)
-	}
-	if n.key < key && n.right != nil {
-		return n.right.get(key)
-	}
-	return nil
-}
-
-func (b *BST) PreOrder() {
-	if b.root == nil {
-		return
-	}
-	b.root.preOrder()
-	fmt.Println("-----------------")
-}
-
-func (n *Node) preOrder() {
-	fmt.Println(n.key, n.val)
+func (n *Node) midOrder() {
 	if n.left != nil {
-		n.left.preOrder()
+		n.left.midOrder()
 	}
+	fmt.Println(n.key, n.val)
 	if n.right != nil {
-		n.right.preOrder()
+		n.right.midOrder()
 	}
 }
