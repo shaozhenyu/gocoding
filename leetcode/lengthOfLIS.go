@@ -3,12 +3,35 @@ package main
 import "fmt"
 
 func main() {
-	nums := []int{4, 10, 4, 3, 8, 9}
+	nums := []int{10, 9, 2, 5, 3, 7, 101, 18}
 	fmt.Println(lengthOfLIS(nums))
 }
 
-// O(NlogN)
 func lengthOfLIS(nums []int) int {
+	size := 0
+	tail := make([]int, len(nums))
+	for i := 0; i < len(nums); i++ {
+		if size == 0 || tail[size-1] < nums[i] {
+			tail[size] = nums[i]
+			size++
+		} else {
+			x, y := 0, size-1
+			for x < y {
+				mid := (x + y) / 2
+				if tail[mid] < nums[i] {
+					x = mid + 1
+				} else {
+					y = mid
+				}
+			}
+			tail[x] = nums[i]
+		}
+	}
+	return size
+}
+
+// O(NlogN)
+func lengthOfLIS2(nums []int) int {
 	tail := make([]int, len(nums))
 	size := 0
 	for _, num := range nums {
@@ -35,25 +58,26 @@ func lengthOfLIS(nums []int) int {
 }
 
 func lengthOfLIS1(nums []int) int {
-	dp := make([]int, len(nums))
-	for i := len(nums) - 1; i >= 0; i-- {
-		dp[i] = 1
-		max := 0
-		for j := i; j < len(nums); j++ {
-			if nums[i] < nums[j] {
-				if dp[j] > max {
-					max = dp[j]
-				}
+	maxEnd := make([]int, len(nums))
+	maxEnd[len(nums)-1] = 0
+	for i := len(nums) - 2; i >= 0; i-- {
+		for j := i + 1; j < len(nums); j++ {
+			if nums[j] > nums[i] {
+				maxEnd[i] = max(maxEnd[j]+1, maxEnd[i])
 			}
 		}
-		dp[i] += max
 	}
+	fmt.Println(maxEnd)
 	ret := 0
-	for i := 0; i < len(nums); i++ {
-		if dp[i] > ret {
-			ret = dp[i]
-		}
+	for i := 0; i < len(maxEnd); i++ {
+		ret = max(maxEnd[i], ret)
 	}
-	fmt.Println(dp)
-	return ret
+	return ret + 1
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
