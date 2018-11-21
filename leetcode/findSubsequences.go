@@ -32,28 +32,6 @@ func findSubsequence(p int, size int, n []int, nums []int, ret [][]int) [][]int 
 	return ret
 }
 
-// func findSubsequences(nums []int) [][]int {
-// 	return findSubsequence(0, []int{}, nums, [][]int{})
-// }
-
-// func findSubsequence(p int, n []int, nums []int, ret [][]int) [][]int {
-// 	if len(n) >= 2 {
-// 		ret = append(ret, n)
-// 	}
-
-// 	for i := p; i < len(nums); i++ {
-// 		if i-1 >= p && nums[i-1] == nums[i] {
-// 			continue
-// 		}
-// 		if len(n) == 0 || n[len(n)-1] <= nums[i] {
-// 			n = append(n, nums[i])
-// 			ret = findSubsequence(i+1, n, nums, ret)
-// 			n = n[:len(n)-1]
-// 		}
-// 	}
-// 	return ret
-// }
-
 func findSubsequences1(nums []int) [][]int {
 	ret := [][]int{}
 	for i := 0; i < len(nums); i++ {
