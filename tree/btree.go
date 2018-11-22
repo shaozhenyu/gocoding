@@ -9,7 +9,7 @@ func main() {
 	}
 	fmt.Println("--------")
 	bTree.Traverse()
-	for i := 1; i <= 1; i++ {
+	for i := 1; i <= 46; i++ {
 		fmt.Println(i, bTree.Delete(i))
 	}
 	fmt.Println("--------")
@@ -156,10 +156,12 @@ func (n *BNode) delete(key int, idx int) *BNode {
 		}
 		n.Num--
 		for n.Num < (M-1)/2 && n.Parent != nil {
-			ok, n := n.restore()
+			var ok bool
+			ok, n = n.restore()
 			if !ok {
 				n = n.mergeNode()
 			}
+			// fmt.Println("sss: ", n.Num, n.Parent)
 		}
 	}
 	for n.Parent != nil && n.Parent.Num > 0 {
@@ -174,7 +176,7 @@ func (n *BNode) restore() (bool, *BNode) {
 	}
 	parent := n.Parent
 	i := 0
-	for ; parent.Child[i] != n; i++ {
+	for ; parent.Child[i] != n && i <= parent.Num; i++ {
 	}
 	// n 有左兄弟节点
 	if i > 0 {
@@ -212,16 +214,18 @@ func (n *BNode) restore() (bool, *BNode) {
 func (n *BNode) mergeNode() *BNode {
 	parent := n.Parent
 	i := 0
-	for ; parent.Child[i] != n; i++ {
+	for ; parent.Child[i] != n && i <= parent.Num; i++ {
 	}
 	// 存在左兄弟节点
 	if i > 0 {
 		b := parent.Child[i-1]
 		b.Num++
 		b.Key[b.Num] = parent.Key[i]
+		b.Child[b.Num] = n.Child[0]
 		for j := 1; j < n.Num; j++ {
 			b.Num++
 			b.Key[b.Num] = n.Key[j]
+			b.Child[b.Num] = n.Child[j]
 		}
 		for j := i - 1; j < parent.Num; j++ {
 			parent.Key[j] = parent.Key[j+1]
@@ -241,16 +245,20 @@ func (n *BNode) mergeNode() *BNode {
 		b := parent.Child[i+1]
 		n.Num++
 		n.Key[n.Num] = parent.Key[1]
+		n.Child[n.Num] = b.Child[0]
 		for j := 1; j <= b.Num; j++ {
 			n.Num++
 			n.Key[n.Num] = b.Key[j]
+			n.Child[n.Num] = b.Child[j]
 		}
 		parent.Num--
 		for j := 1; j <= parent.Num; j++ {
 			parent.Key[j] = parent.Key[j+1]
 			parent.Child[j] = parent.Child[j+1]
 		}
+		fmt.Println("ss: ", parent.Num, n.Key)
 
+		// fmt.Println(parent)
 		// n = parent
 		// // 检查parent是否合法
 		// if parent.Num < (M-1)/2 && parent.Parent != nil {
