@@ -4,13 +4,19 @@ import "fmt"
 
 func main() {
 	bTree := newBTree(M)
-	for i := 1; i <= 20; i++ {
+	for i := 1; i <= 100; i++ {
 		bTree.Insert(i)
 	}
+	fmt.Println("--------")
+	bTree.Traverse()
+	for i := 1; i <= 1; i++ {
+		fmt.Println(i, bTree.Delete(i))
+	}
+	fmt.Println("--------")
 	bTree.Traverse()
 }
 
-const M int = 4
+const M int = 5
 
 type BTree struct {
 	M    int // 阶
@@ -125,6 +131,134 @@ func (n *BNode) Split() *BNode {
 	parent.Num++
 	if parent.Num >= M {
 		return parent.Split()
+	}
+	return parent
+}
+
+func (b *BTree) Delete(key int) bool {
+	find, i, node := b.Search(key)
+	if find {
+		b.Root = node.delete(key, i)
+	}
+	return find
+}
+
+func (n *BNode) delete(key int, idx int) *BNode {
+	// 非叶子节点
+	if n.Child[idx] != nil {
+		child := n.Child[idx]
+		n.Key[idx] = child.Key[1]
+		return n.Child[idx].delete(child.Key[1], 1)
+	} else {
+		for i := idx; i < n.Num; i++ {
+			n.Key[i] = n.Key[i+1]
+			// n.Child[i] = n.Child[i+1] // do not need
+		}
+		n.Num--
+		for n.Num < (M-1)/2 && n.Parent != nil {
+			ok, n := n.restore()
+			if !ok {
+				n = n.mergeNode()
+			}
+		}
+	}
+	for n.Parent != nil && n.Parent.Num > 0 {
+		n = n.Parent
+	}
+	return n
+}
+
+func (n *BNode) restore() (bool, *BNode) {
+	if n.Parent == nil {
+		return false, nil
+	}
+	parent := n.Parent
+	i := 0
+	for ; parent.Child[i] != n; i++ {
+	}
+	// n 有左兄弟节点
+	if i > 0 {
+		b := parent.Child[i-1]
+		if b.Num > (M-1)/2 {
+			// 将parent节点下移
+			for j := n.Num; j >= 0; j-- {
+				n.Key[j+1] = n.Key[j]
+			}
+			n.Key[1] = parent.Key[i]
+			parent.Key[i] = b.Key[b.Num]
+			n.Num++
+			b.Num--
+			return true, parent
+		}
+	}
+
+	// n 有右兄弟节点
+	if i < parent.Num {
+		b := parent.Child[i+1]
+		if b.Num > (M-1)/2 {
+			n.Key[n.Num+1] = parent.Key[i+1]
+			n.Num++
+			parent.Key[i+1] = b.Key[1]
+			for j := 1; j < b.Num; j++ {
+				b.Key[j] = b.Key[j+1]
+			}
+			b.Num--
+			return true, parent
+		}
+	}
+	return false, n
+}
+
+func (n *BNode) mergeNode() *BNode {
+	parent := n.Parent
+	i := 0
+	for ; parent.Child[i] != n; i++ {
+	}
+	// 存在左兄弟节点
+	if i > 0 {
+		b := parent.Child[i-1]
+		b.Num++
+		b.Key[b.Num] = parent.Key[i]
+		for j := 1; j < n.Num; j++ {
+			b.Num++
+			b.Key[b.Num] = n.Key[j]
+		}
+		for j := i - 1; j < parent.Num; j++ {
+			parent.Key[j] = parent.Key[j+1]
+			parent.Child[j] = parent.Child[j+1]
+		}
+		parent.Num--
+		parent.Child[i-1] = b
+
+		// // 检查parent是否合法
+		// if parent.Num < (M-1)/2 && parent.Parent != nil {
+		// 	ok, parent := parent.restore()
+		// 	if !ok {
+		// 		parent = parent.mergeNode()
+		// 	}
+		// }
+	} else {
+		b := parent.Child[i+1]
+		n.Num++
+		n.Key[n.Num] = parent.Key[1]
+		for j := 1; j <= b.Num; j++ {
+			n.Num++
+			n.Key[n.Num] = b.Key[j]
+		}
+		parent.Num--
+		for j := 1; j <= parent.Num; j++ {
+			parent.Key[j] = parent.Key[j+1]
+			parent.Child[j] = parent.Child[j+1]
+		}
+
+		// n = parent
+		// // 检查parent是否合法
+		// if parent.Num < (M-1)/2 && parent.Parent != nil {
+		// 	ok, parent := parent.restore()
+		// 	if !ok {
+		// 		parent = parent.mergeNode()
+		// 	}
+		// }
 	}
 	return parent
 }
