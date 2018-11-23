@@ -1,294 +1,325 @@
 package main
 
-import "fmt"
-
-func main() {
-	bTree := newBTree(M)
-	for i := 1; i <= 100; i++ {
-		bTree.Insert(i)
-	}
-	fmt.Println("--------")
-	bTree.Traverse()
-	for i := 1; i <= 46; i++ {
-		fmt.Println(i, bTree.Delete(i))
-	}
-	fmt.Println("--------")
-	bTree.Traverse()
-}
-
-const M int = 5
-
-type BTree struct {
-	M    int // 阶
-	Root *BNode
-}
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+)
 
 type BNode struct {
-	Num    int
-	Key    [M + 1]int
-	Parent *BNode
-	Child  [M + 1]*BNode
+	key int
 }
 
-func newBTree(m int) *BTree {
-	return &BTree{
-		M: m,
+func (b BNode) Less(b1 Item) bool {
+	return b.key < b1.(BNode).key
+}
+
+func main() {
+	degree := 2
+	b := New(degree)
+	for i := 1; i <= 4; i++ {
+		bn := BNode{i}
+		b.ReplaceOrInsert(bn)
+	}
+	fmt.Println("insert")
+	b.root.print(0)
+	for i := 1; i <= 2; i++ {
+		bn := BNode{i}
+		b.Delete(bn)
+	}
+	fmt.Println("delete")
+	b.root.print(0)
+}
+
+const (
+	DefaultFreeListSize = 32
+)
+
+var (
+	nilItems    = make(items, 16)
+	nilChildren = make(children, 16)
+)
+
+type Item interface {
+	Less(than Item) bool
+}
+
+type items []Item
+
+func (s items) find(item Item) (index int, found bool) {
+	i := sort.Search(len(s), func(i int) bool {
+		return item.Less(s[i])
+	})
+	// s[i-1] equal item find
+	if i > 0 && !s[i-1].Less(item) {
+		return i - 1, true
+	}
+	return i, false
+}
+
+func (s *items) insertAt(index int, item Item) {
+	*s = append(*s, nil)
+	if index < len(*s) {
+		copy((*s)[index+1:], (*s)[index:])
+	}
+	(*s)[index] = item
+}
+
+func (s *items) truncate(index int) {
+	var toClear items
+	*s, toClear = (*s)[:index], (*s)[index:]
+	for len(toClear) > 0 {
+		toClear = toClear[copy(toClear, nilItems):]
 	}
 }
 
-func newBNode(key int) *BNode {
-	b := &BNode{
-		Num: 1,
-	}
-	b.Key[1] = key
-	return b
+func (s *items) removeAt(index int) Item {
+	item := (*s)[index]
+	copy((*s)[index:], (*s)[index+1:])
+	(*s)[len(*s)-1] = nil
+	*s = (*s)[:len(*s)-1]
+	return item
 }
 
-func (b *BTree) Search(key int) (find bool, idx int, node *BNode) {
-	if b.Root == nil {
-		return
+type children []*node
+
+func (s *children) insertAt(index int, n *node) {
+	*s = append(*s, nil)
+	if index > len(*s) {
+		copy((*s)[index+1:], (*s)[index:])
 	}
-	t := b.Root
-	for t != nil {
-		idx = t.Num
-		for ; idx > 0 && key <= t.Key[idx]; idx-- {
-			if t.Key[idx] == key {
-				find, node = true, t
-				return
-			}
+	(*s)[index] = n
+}
+
+func (s *children) truncate(index int) {
+	var toClear children
+	*s, toClear = (*s)[:index], (*s)[index:]
+	for len(toClear) > 0 {
+		toClear = toClear[copy(toClear, nilChildren):]
+	}
+}
+
+type node struct {
+	items    items
+	children children
+	cow      *copyOnWriteContext
+}
+
+func (n *node) mutableFor(cow *copyOnWriteContext) *node {
+	if n.cow == cow {
+		return n
+	}
+	out := cow.newNode()
+	if cap(out.items) >= len(n.items) {
+		out.items = out.items[:len(n.items)]
+	} else {
+		out.items = make(items, len(n.items), cap(n.items))
+	}
+	copy(out.items, n.items)
+	if cap(out.children) >= len(n.children) {
+		out.children = out.children[:len(n.children)]
+	} else {
+		out.children = make(children, len(n.children), cap(n.children))
+	}
+	copy(out.children, n.children)
+	return out
+}
+
+func (n *node) mutableChild(i int) *node {
+	c := n.children[i].mutableFor(n.cow)
+	n.children[i] = c
+	return c
+}
+
+func (n *node) maybeSplitChild(i, maxItems int) bool {
+	if len(n.children[i].items) < maxItems {
+		return false
+	}
+	first := n.mutableChild(i)
+	item, second := first.split(maxItems / 2)
+	n.items.insertAt(i, item)
+	n.children.insertAt(i+1, second)
+	return true
+}
+
+func (n *node) insert(item Item, maxItems int) Item {
+	i, found := n.items.find(item)
+	if found {
+		out := n.items[i]
+		n.items[i] = item
+		return out
+	}
+	// 叶子结点
+	if len(n.children) == 0 {
+		n.items.insertAt(i, item)
+		return nil
+	}
+	fmt.Println("insert :", i, item)
+	if n.maybeSplitChild(i, maxItems) {
+		change := n.items[i]
+		switch {
+		case item.Less(change):
+			// do nothing
+		case change.Less(item):
+			i++
+		default:
+			// find
+			out := n.items[i]
+			n.items[i] = item
+			return out
 		}
-		if t.Child[idx] == nil {
-			node = t
-		}
-		t = t.Child[idx]
 	}
+	return n.mutableChild(i).insert(item, maxItems)
+}
+
+func (n *node) split(i int) (Item, *node) {
+	item := n.items[i]
+	next := n.cow.newNode()
+	next.items = append(next.items, n.items[i+1:]...)
+	n.items.truncate(i)
+	if len(n.children) > 0 {
+		next.children = append(next.children, n.children[i+1:]...)
+		n.children.truncate(i + 1)
+	}
+	return item, next
+}
+
+func (n *node) remove(item Item, minItems int) Item {
+	var i int
+	var found bool
+	i, found = n.items.find(item)
+	if len(n.children) == 0 {
+		if found {
+			return n.items.removeAt(i)
+		}
+		return nil
+	}
+	if len(n.children[i].items) <= minItems {
+		return n.growChildAndRemove(i, item, minItems)
+	}
+
+	return nil
+}
+
+func (n *node) growChildAndRemove(i int, item Item, minItems int) Item {
+	// 左子节点有多余的item可以使用
+	// if i > 0 && len(n.children[i-1].items) > minItems {
+
+	// }
+	fmt.Println("growChildAndRemove i:", i)
+	return nil
+}
+
+type FreeList struct {
+	mu       sync.Mutex
+	freelist []*node
+}
+
+func (f *FreeList) newNode() (n *node) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	index := len(f.freelist) - 1
+	if index < 0 {
+		return new(node)
+	}
+	n = f.freelist[index]
+	f.freelist[index] = nil
+	f.freelist = f.freelist[:index]
 	return
 }
 
-func (b *BTree) Insert(key int) bool {
-	if b.Root == nil {
-		b.Root = newBNode(key)
-		return true
-	}
-	find, _, node := b.Search(key)
-	if !find {
-		var i = node.Num
-		for ; i > 0 && node.Key[i] > key; i-- {
-			node.Key[i+1] = node.Key[i]
-		}
-		node.Key[i+1] = key
-		node.Num++
-		if node.Num < b.M {
-			return true
-		} else {
-			parent := node.Split()
-			for parent.Parent != nil {
-				parent = parent.Parent
-			}
-			b.Root = parent
-			return true
-		}
-	}
-	return false
+type copyOnWriteContext struct {
+	freelist *FreeList
 }
 
-func (n *BNode) Split() *BNode {
-	parent := n.Parent
-	if parent == nil {
-		parent = &BNode{}
-	}
-	// 拆分成两个新的node
-	mid := n.Num/2 + 1
-	newNode := &BNode{}
-	newNode.Num = M - mid
-	for i := 1; i <= newNode.Num; i++ {
-		newNode.Key[i] = n.Key[mid+i]
-		newNode.Child[i-1] = n.Child[mid+i-1]
-		if newNode.Child[i-1] != nil {
-			newNode.Child[i-1].Parent = newNode // !!
-		}
-		n.Key[mid+1] = 0
-		// n.Child[mid+i-1] = nil
-	}
-	newNode.Child[newNode.Num] = n.Child[n.Num]
-	if newNode.Child[newNode.Num] != nil {
-		newNode.Child[newNode.Num].Parent = newNode // !!
-	}
-	n.Num = mid - 1
-	n.Parent = parent
-	newNode.Parent = parent
-	// 将中间节点插入到parent
-	parentNum := parent.Num
-	midNode := n.Key[mid]
-	k := parentNum
-	for ; midNode < parent.Key[k]; k-- {
-		parent.Key[k+1] = parent.Key[k]
-		parent.Child[k+1] = parent.Child[k]
-	}
-	parent.Key[k+1] = midNode
-	parent.Child[k] = n
-	parent.Child[k+1] = newNode
-	parent.Num++
-	if parent.Num >= M {
-		return parent.Split()
-	}
-	return parent
+func (c *copyOnWriteContext) newNode() (n *node) {
+	n = c.freelist.newNode()
+	n.cow = c
+	return
 }
 
-func (b *BTree) Delete(key int) bool {
-	find, i, node := b.Search(key)
-	if find {
-		b.Root = node.delete(key, i)
-	}
-	return find
+type BTree struct {
+	degree int
+	length int
+	root   *node
+	cow    *copyOnWriteContext
 }
 
-func (n *BNode) delete(key int, idx int) *BNode {
-	// 非叶子节点
-	if n.Child[idx] != nil {
-		child := n.Child[idx]
-		n.Key[idx] = child.Key[1]
-		return n.Child[idx].delete(child.Key[1], 1)
+func (t *BTree) maxItems() int {
+	return t.degree*2 - 1
+}
+
+func (t *BTree) minItems() int {
+	return t.degree - 1
+}
+
+func (t *BTree) ReplaceOrInsert(item Item) Item {
+	if item == nil {
+		panic("nil item being added to BTree")
+	}
+	if t.root == nil {
+		t.root = t.cow.newNode()
+		t.root.items = append(t.root.items, item)
+		t.length++
+		return nil
 	} else {
-		for i := idx; i < n.Num; i++ {
-			n.Key[i] = n.Key[i+1]
-			// n.Child[i] = n.Child[i+1] // do not need
-		}
-		n.Num--
-		for n.Num < (M-1)/2 && n.Parent != nil {
-			var ok bool
-			ok, n = n.restore()
-			if !ok {
-				n = n.mergeNode()
-			}
-			// fmt.Println("sss: ", n.Num, n.Parent)
+		t.root = t.root.mutableFor(t.cow)
+		if len(t.root.items) >= t.maxItems() {
+			item2, second := t.root.split(t.maxItems() / 2)
+			oldRoot := t.root
+			t.root = t.cow.newNode()
+			t.root.items = append(t.root.items, item2)
+			t.root.children = append(t.root.children, oldRoot, second)
 		}
 	}
-	for n.Parent != nil && n.Parent.Num > 0 {
-		n = n.Parent
+	out := t.root.insert(item, t.maxItems())
+	if out == nil {
+		t.length++
 	}
-	return n
+	return out
 }
 
-func (n *BNode) restore() (bool, *BNode) {
-	if n.Parent == nil {
-		return false, nil
+func (t *BTree) Delete(item Item) Item {
+	if t.root == nil || len(t.root.items) == 0 {
+		return nil
 	}
-	parent := n.Parent
-	i := 0
-	for ; parent.Child[i] != n && i <= parent.Num; i++ {
+	t.root = t.root.mutableFor(t.cow)
+	out := t.root.remove(item, t.minItems())
+	if len(t.root.items) == 0 && len(t.root.children) > 0 {
+		// oldRoot := t.root
+		t.root = t.root.children[0]
 	}
-	// n 有左兄弟节点
-	if i > 0 {
-		b := parent.Child[i-1]
-		if b.Num > (M-1)/2 {
-			// 将parent节点下移
-			for j := n.Num; j >= 0; j-- {
-				n.Key[j+1] = n.Key[j]
-			}
-			n.Key[1] = parent.Key[i]
-			parent.Key[i] = b.Key[b.Num]
-			n.Num++
-			b.Num--
-			return true, parent
-		}
+	if out != nil {
+		t.length--
 	}
-
-	// n 有右兄弟节点
-	if i < parent.Num {
-		b := parent.Child[i+1]
-		if b.Num > (M-1)/2 {
-			n.Key[n.Num+1] = parent.Key[i+1]
-			n.Num++
-			parent.Key[i+1] = b.Key[1]
-			for j := 1; j < b.Num; j++ {
-				b.Key[j] = b.Key[j+1]
-			}
-			b.Num--
-			return true, parent
-		}
-	}
-	return false, n
+	return out
 }
 
-func (n *BNode) mergeNode() *BNode {
-	parent := n.Parent
-	i := 0
-	for ; parent.Child[i] != n && i <= parent.Num; i++ {
-	}
-	// 存在左兄弟节点
-	if i > 0 {
-		b := parent.Child[i-1]
-		b.Num++
-		b.Key[b.Num] = parent.Key[i]
-		b.Child[b.Num] = n.Child[0]
-		for j := 1; j < n.Num; j++ {
-			b.Num++
-			b.Key[b.Num] = n.Key[j]
-			b.Child[b.Num] = n.Child[j]
-		}
-		for j := i - 1; j < parent.Num; j++ {
-			parent.Key[j] = parent.Key[j+1]
-			parent.Child[j] = parent.Child[j+1]
-		}
-		parent.Num--
-		parent.Child[i-1] = b
-
-		// // 检查parent是否合法
-		// if parent.Num < (M-1)/2 && parent.Parent != nil {
-		// 	ok, parent := parent.restore()
-		// 	if !ok {
-		// 		parent = parent.mergeNode()
-		// 	}
-		// }
-	} else {
-		b := parent.Child[i+1]
-		n.Num++
-		n.Key[n.Num] = parent.Key[1]
-		n.Child[n.Num] = b.Child[0]
-		for j := 1; j <= b.Num; j++ {
-			n.Num++
-			n.Key[n.Num] = b.Key[j]
-			n.Child[n.Num] = b.Child[j]
-		}
-		parent.Num--
-		for j := 1; j <= parent.Num; j++ {
-			parent.Key[j] = parent.Key[j+1]
-			parent.Child[j] = parent.Child[j+1]
-		}
-		fmt.Println("ss: ", parent.Num, n.Key)
-
-		// fmt.Println(parent)
-		// n = parent
-		// // 检查parent是否合法
-		// if parent.Num < (M-1)/2 && parent.Parent != nil {
-		// 	ok, parent := parent.restore()
-		// 	if !ok {
-		// 		parent = parent.mergeNode()
-		// 	}
-		// }
-	}
-	return parent
+// new
+func New(degree int) *BTree {
+	return NewWithFreeList(degree, NewFreeList(DefaultFreeListSize))
 }
 
-func (b *BTree) Traverse() {
-	queue := make([]*BNode, 0)
-	if b.Root != nil {
-		queue = append(queue, b.Root)
+func NewWithFreeList(degree int, f *FreeList) *BTree {
+	if degree <= 1 {
+		panic("bad degree")
 	}
-	idx := 0
-	for len(queue) > idx {
-		now := queue[idx]
-		idx++
-		fmt.Print("[")
-		for i := 1; i <= now.Num; i++ {
-			fmt.Printf(" %d ", now.Key[i])
-		}
-		fmt.Print("]\n")
-		for i := 0; i <= now.Num; i++ {
-			if now.Child[i] != nil {
-				queue = append(queue, now.Child[i])
-			}
-		}
+	return &BTree{
+		degree: degree,
+		cow:    &copyOnWriteContext{freelist: f},
+	}
+}
+
+func NewFreeList(size int) *FreeList {
+	return &FreeList{freelist: make([]*node, 0, size)}
+}
+
+// test
+func (n *node) print(level int) {
+	fmt.Printf("%sNODE:%v\n", strings.Repeat("  ", level), n.items)
+	for _, c := range n.children {
+		c.print(level + 1)
 	}
 }

@@ -24,6 +24,30 @@ func findMaxForm(strs []string, m int, n int) int {
 	for i := 0; i <= m; i++ {
 		dp[i] = make([]int, n+1)
 	}
+	for i := 0; i < len(strs); i++ {
+		zero, one := 0, 0
+		for j := 0; j < len(strs[i]); j++ {
+			if strs[i][j] == '0' {
+				zero++
+			} else {
+				one++
+			}
+		}
+
+		for x := m; x >= zero; x-- {
+			for y := n; y >= one; y-- {
+				dp[x][y] = max(dp[x][y], dp[x-zero][y-one]+1)
+			}
+		}
+	}
+	return dp[m][n]
+}
+
+func findMaxForm1(strs []string, m int, n int) int {
+	dp := make([][]int, m+1)
+	for i := 0; i <= m; i++ {
+		dp[i] = make([]int, n+1)
+	}
 
 	var one, zero int
 	for i := 0; i < len(strs); i++ {
