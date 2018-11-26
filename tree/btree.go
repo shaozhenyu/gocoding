@@ -24,8 +24,9 @@ func main() {
 	}
 	fmt.Println("insert")
 	b.root.print(0)
-	for i := 1; i <= 2; i++ {
+	for i := 4; i >= 3; i-- {
 		bn := BNode{i}
+		fmt.Println("-----------------")
 		b.Delete(bn)
 	}
 	fmt.Println("delete")
@@ -34,6 +35,14 @@ func main() {
 
 const (
 	DefaultFreeListSize = 32
+)
+
+type toRemove int
+
+const (
+	removeItem toRemove = iota
+	removeMin
+	removeMax
 )
 
 var (
@@ -82,6 +91,14 @@ func (s *items) removeAt(index int) Item {
 	return item
 }
 
+func (s *items) pop() (out Item) {
+	index := len(*s) - 1
+	out = (*s)[index]
+	(*s)[index] = nil
+	*s = (*s)[:index]
+	return
+}
+
 type children []*node
 
 func (s *children) insertAt(index int, n *node) {
@@ -90,6 +107,22 @@ func (s *children) insertAt(index int, n *node) {
 		copy((*s)[index+1:], (*s)[index:])
 	}
 	(*s)[index] = n
+}
+
+func (s *children) removeAt(index int) *node {
+	n := (*s)[index]
+	copy((*s)[index:], (*s)[index+1:])
+	(*s)[len(*s)-1] = nil
+	*s = (*s)[:len(*s)-1]
+	return n
+}
+
+func (s *children) pop() (out *node) {
+	index := len(*s) - 1
+	out = (*s)[index]
+	(*s)[index] = nil
+	*s = (*s)[:index]
+	return
 }
 
 func (s *children) truncate(index int) {
@@ -185,30 +218,73 @@ func (n *node) split(i int) (Item, *node) {
 	return item, next
 }
 
-func (n *node) remove(item Item, minItems int) Item {
+func (n *node) remove(item Item, minItems int, typ toRemove) Item {
 	var i int
 	var found bool
-	i, found = n.items.find(item)
-	if len(n.children) == 0 {
-		if found {
-			return n.items.removeAt(i)
+	switch typ {
+	case removeMax:
+		if len(n.children) == 0 {
+			return n.items.pop()
 		}
-		return nil
+		i = len(n.items)
+	case removeMin:
+	case removeItem:
+		i, found = n.items.find(item)
+		if len(n.children) == 0 {
+			if found {
+				return n.items.removeAt(i)
+			}
+			return nil
+		}
+	default:
+		panic("invaild type")
 	}
 	if len(n.children[i].items) <= minItems {
-		return n.growChildAndRemove(i, item, minItems)
+		return n.growChildAndRemove(i, item, minItems, typ)
 	}
-
-	return nil
+	child := n.mutableChild(i)
+	if found {
+		out := n.items[i]
+		n.items[i] = child.remove(nil, minItems, removeMax)
+		return out
+	}
+	return child.remove(item, minItems, typ)
 }
 
-func (n *node) growChildAndRemove(i int, item Item, minItems int) Item {
-	// 左子节点有多余的item可以使用
-	// if i > 0 && len(n.children[i-1].items) > minItems {
-
-	// }
+func (n *node) growChildAndRemove(i int, item Item, minItems int, typ toRemove) Item {
 	fmt.Println("growChildAndRemove i:", i)
-	return nil
+	// 左子节点有多余的item可以使用
+	if i > 0 && len(n.children[i-1].items) > minItems {
+		child := n.mutableChild(i)
+		stealFrom := n.mutableChild(i - 1)
+		stolenItem := stealFrom.items.pop()
+		child.items.insertAt(0, n.items[i-1])
+		n.items[i-1] = stolenItem
+		if len(stealFrom.children) > 0 {
+			child.children.insertAt(0, stealFrom.children.pop())
+		}
+	} else if i < len(n.items) && len(n.children[i+1].items) > minItems {
+		child := n.mutableChild(i)
+		stealFrom := n.mutableChild(i + 1)
+		stolenItem := stealFrom.items.removeAt(0)
+		child.items = append(child.items, n.items[i])
+		n.items[i] = stolenItem
+		if len(stealFrom.children) > 0 {
+			child.children = append(child.children, stealFrom.children.removeAt(0))
+		}
+	} else {
+		// merge
+		if i >= len(n.items) {
+			i--
+		}
+		child := n.mutableChild(i)
+		mergeItem := n.items.removeAt(i)
+		mergeChild := n.children.removeAt(i + 1)
+		child.items = append(child.items, mergeItem)
+		child.items = append(child.items, mergeChild.items...)
+		child.children = append(child.children, mergeChild.children...)
+	}
+	return n.remove(item, minItems, typ)
 }
 
 type FreeList struct {
@@ -282,11 +358,15 @@ func (t *BTree) ReplaceOrInsert(item Item) Item {
 }
 
 func (t *BTree) Delete(item Item) Item {
+	return t.deleteItem(item, removeItem)
+}
+
+func (t *BTree) deleteItem(item Item, typ toRemove) Item {
 	if t.root == nil || len(t.root.items) == 0 {
 		return nil
 	}
 	t.root = t.root.mutableFor(t.cow)
-	out := t.root.remove(item, t.minItems())
+	out := t.root.remove(item, t.minItems(), typ)
 	if len(t.root.items) == 0 && len(t.root.children) > 0 {
 		// oldRoot := t.root
 		t.root = t.root.children[0]
