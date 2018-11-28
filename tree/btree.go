@@ -188,7 +188,6 @@ func (n *node) insert(item Item, maxItems int) Item {
 		n.items.insertAt(i, item)
 		return nil
 	}
-	fmt.Println("insert :", i, item)
 	if n.maybeSplitChild(i, maxItems) {
 		change := n.items[i]
 		switch {
