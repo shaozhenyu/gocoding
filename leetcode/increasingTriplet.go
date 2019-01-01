@@ -5,17 +5,17 @@ import (
 )
 
 func main() {
-	nums := []int{1, 2, 3, 5, 3, 2}
+	nums := []int{1, 0,0,0,0,0,10000000}
 	fmt.Println(increasingTriplet(nums))
 }
 
 func increasingTriplet(nums []int) bool {
-	min1 := 999999
-	min2 := 999999
+	min1 := 2 << 31
+	min2 := 2 << 31
 	for _, v := range nums {
-		if v < min1 {
+		if v <= min1 {
 			min1 = v
-		} else if v < min2 {
+		} else if v <= min2 {
 			min2 = v
 		} else {
 			return true

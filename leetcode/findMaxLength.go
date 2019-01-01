@@ -6,12 +6,60 @@ import (
 
 func main() {
 	nums := []int{0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1}
-	fmt.Println(findMaxLength(nums))
+	fmt.Println(findMaxLength1(nums))
 }
 
 func findMaxLength(nums []int) int {
 	m := make(map[int]int)
+	for i := 0; i < len(nums); i++ {
+		if nums[i] == 0 {
+			nums[i] = -1
+		}
+	}
+	sum := 0
+	max := 0
+	m[sum] = -1
+	for i := 0; i < len(nums); i++ {
+		sum += nums[i]
+		if v, ok := m[sum]; ok {
+			max = Max(max, i - v)
+		} else {
+			m[sum] = i
+		}
+	}
+	return max
+}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+func findMaxLength1(nums []int) int {
+	m := make(map[int]int)
 	for i := 0; i < len(nums); i++ {
 		if nums[i] == 0 {
 			nums[i] = -1
