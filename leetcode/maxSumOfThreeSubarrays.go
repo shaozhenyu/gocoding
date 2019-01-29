@@ -40,9 +40,7 @@ func maxSumOfThreeSubarrays(nums []int, k int) []int {
 		}
 		left[i][0] = maxLeft
 		left[i][1] = leftPos
-
 		if array[j+k] > maxRight {
-			fmt.Println(array[j+k], j+k)
 			maxRight = array[j+k]
 			rightPos = j + k
 		}
@@ -50,14 +48,10 @@ func maxSumOfThreeSubarrays(nums []int, k int) []int {
 		right[j][1] = rightPos
 	}
 
-	fmt.Println("left:", left)
-	fmt.Println("right:", right)
-
 	max := 0
 	var a, b, c int
 	for i := k; i < len(array)-k; i++ {
 		v := array[i] + left[i][0] + right[i][0]
-		fmt.Println("i, v : ", i, v)
 		if v > max {
 			max = v
 			a = left[i][1]
