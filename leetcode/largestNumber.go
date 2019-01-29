@@ -21,28 +21,18 @@ type Node struct {
 
 func largestNumber(nums []int) string {
 	ret := ""
-	add := make([]string, 10)
-	for i := 0; i < 10; i++ {
-		add[i] = strings.Repeat(strconv.Itoa(i), 10)
-	}
 	node := make([]Node, len(nums))
 	for i := 0; i < len(nums); i++ {
 		v := strconv.Itoa(nums[i])
-		s := v + add[int(v[0] - '0')]
+		s := v + strings.Repeat(string(v[len(v)-1]), 10)
 		node[i] = Node{v, s[:10]}
 	}
 	sort.Slice(node, func(i, j int) bool {
-		if node[i].s == node[j].s {
-			return node[i].v + node[j].v > node[j].v + node[i].v
-		}
 		return node[i].s > node[j].s
 	})
+	fmt.Println(node)
 	for i := 0; i < len(node); i++ {
 		ret += node[i].v
 	}
-	if len(ret) > 0 && ret[0] == '0' {
-		return "0"
-	}
 	return ret
 }
-
