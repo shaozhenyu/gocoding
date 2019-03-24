@@ -15,7 +15,6 @@ func findKthNumber(m int, n int, k int) int {
 	for low < high {
 		mid := (low + high)/2
 		count := less(mid, m, n)
-		fmt.Println("count:", count, "mid:", mid)
 		if count >= k {
 			high = mid
 		} else {
@@ -30,9 +29,7 @@ func findKthNumber(m int, n int, k int) int {
 func less(num, m, n int) int {
 	count := 0
 	for i := 1; i <= m; i++ {
-		fmt.Println()
 		count += min(num/i, n)
-		fmt.Println(count)
 	}
 	return count
 }
