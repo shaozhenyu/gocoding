@@ -7,46 +7,28 @@ func main() {
 	fmt.Println(numPermsDISequence(s))
 }
 
-// "D" 减少 "I" 增加
 func numPermsDISequence(S string) int {
-	n := len(S)
-	m := make(map[int]bool)
-	for i := 0; i <= n; i++ {
-		m[i] = true
+	mod := 1000000007
+	dp := make([][]int, len(S)+1)
+	for i := 0; i < len(dp); i++ {
+		dp[i] = make([]int, len(dp))
 	}
-	count := 0
-	for i := 0; i <= n; i++ {
-		delete(m, i)
-		count += numPerms(S, m, i, n)
-		m[i] = true
+	for i := 0; i < len(dp); i++ {
+		dp[0][i] = 1
 	}
-	return count
-}
-
-func numPerms(S string, m map[int]bool, now, n int) int {
-	if len(S) == 0 {
-		if len(m) == 0 {
-			return 1
-		}
-		return 0
-	}
-	count := 0
-	if S[0] == 'D' {
-		for i := now - 1; i >= 0; i-- {
-			if m[i] {
-				delete(m, i)
-				count += numPerms(S[1:], m, i, n)
-				m[i] = true
+	for i := 0; i < len(S); i++ {
+		t := 0
+		if S[i] == 'D' {
+			for j := len(S) - i - 1; j >= 0; j-- {
+				t = (t + dp[i][j+1]) % mod
+				dp[i+1][j] = t
 			}
-		}
-	} else {
-		for i := now + 1; i <= n; i++ {
-			if m[i] {
-				delete(m, i)
-				count += numPerms(S[1:], m, i, n)
-				m[i] = true
+		} else {
+			for j := 0; j < len(S) - i; j++ {
+				t = (t + dp[i][j]) % mod
+				dp[i+1][j] = t
 			}
 		}
 	}
-	return count
+	return dp[len(S)][0]
 }
