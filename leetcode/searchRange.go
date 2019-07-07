@@ -6,9 +6,33 @@ func main() {
 	nums := []int{1, 1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4}
 	target := 2
 	fmt.Println(searchRange(nums, target))
+	fmt.Println(searchRange([]int{5,7,7,8,8,10}, 8))
 }
 
 func searchRange(nums []int, target int) []int {
+	left, right := 0, len(nums) - 1
+	for left < right {
+		mid := left + (right - left)/2
+		if nums[mid] > target {
+			right = mid - 1
+		} else if nums[mid] < target {
+			left = mid + 1
+		} else {
+			if nums[left] == target && nums[right] == target {
+				break
+			}
+			if nums[left] < target {
+				left++
+			}
+			if nums[right] > target {
+				right--
+			}
+		}
+	}
+	return []int{left, right}
+}
+
+func searchRange1(nums []int, target int) []int {
 	if len(nums) == 0 {
 		return []int{-1, -1}
 	}
