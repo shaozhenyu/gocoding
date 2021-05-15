@@ -25,4 +25,5 @@ func main() {
 	flag.Parse()
 	fmt.Println(*name, age)
 	fmt.Println(*name, age, 1)
+	fmt.Println(*name, age, 2)
 }
