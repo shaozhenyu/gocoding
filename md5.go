@@ -20,5 +20,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%x\n", h.Sum(nil))
+	fmt.Println("%x", h.Sum(nil))
 }
