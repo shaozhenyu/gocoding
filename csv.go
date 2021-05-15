@@ -7,6 +7,7 @@ func FormatCSV(records [][]string) (data []byte, err error) {
 	w := csv.NewWriter(buf)
 	err = w.WriteAll(records)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
