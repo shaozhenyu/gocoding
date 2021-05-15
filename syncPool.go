@@ -17,4 +17,5 @@ func main() {
 	b := p.Get().(int)
 	fmt.Println(a, b)
 	fmt.Println(a, b)
+	fmt.Println(a, b)
 }
